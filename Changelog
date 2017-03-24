@@ -1,0 +1,56 @@
+1.24
+	Added support for HTTP/2 GET requests
+	Added uuencoding for email attachments
+	- CAUTION! While uuencoding for smtp should be fine, pop3 and imap have not been verified!
+	The pop3 pcaps had an invalid boundary separating the attachment - fixed
+	Fixed mail headers in smtp.c for several encodings
+
+1.23
+	Filenames including spaces and similar characters are now more properly encoded in a URL
+	Added a check to prevent output file and input file being the same
+
+1.22
+	Fixed HTTP POST. Now the content length is correct
+
+1.21
+	Added HTTP POST support
+
+1.2
+	Fixed a bug that made the code mix up the ethernet addresses, resulting in src_ip(and dst_ip) and src_ether(and dst_ether) suddenly matching src_ip but dst_ether,
+	so from an ethernet point of view the packets were going in a different direction than from an IP point of view
+
+	Added ftp support
+
+	Renamed tcpTeardown() to tcpShutdown()
+
+1.11
+        Fixed a small bug in the http part, which resulted in the 4 closing tcp packets to have the wrong timestamp(Thanks Eric Moret (eric.moret@gmail.com) !
+
+1.1
+	Now supports IPv6
+	Bit of a cleanup in the code
+
+1.0
+	Changed the version number, for release :)	
+
+0.97
+	Adding quoted-printable encoding(experimental)
+	Added -e option for setting the encoder (base64/mime or quoted printable)
+0.96
+	Fixed headers in helpers.c. Compiles on BSD again now.
+	Fixed encoding issue where an extra byte was smuggled between the data and the equal(=) signs at the very end of the data
+	Changed a memset in helpers.c. Before, a byte past the buffer was nulled.
+
+0.95
+	Finally really fixed that bug in the encoding function. It was an off-by-one basically, where bytes at the end and past the malloc'd buffer were used and influenced the encoding result
+
+0.94
+	Fixed a major bug in the mime encoding. Previous base64/mime encoding was NOT done correctly. Smtp/Pop3/Imap pcaps created with file2pcap < version 0.94 will likely have attachments incorrectly encoded.
+
+0.93
+	Fixed attachment type and filename of the imap attachment
+	Fixed attachment type and filename of the pop3 attachment
+
+0.92
+	Now also works on BSD
+

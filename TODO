@@ -1,0 +1,19 @@
+if there are spaces in a filename, properly encode them as %20	DONE
+imap and pop3: attachment type is image/jpg			DONE	
+more encoding - uuencode					DONE
+fix outfile == infile is endless loop				DONE
+add http put
+ipv6								DONE
+default mode http						DONE
+default output filename = input filename+protocol		DONE
+generate several pcaps at once					DONE
+fix linebreaks in email headers and such			DONE
+fractional second is wrong in ethernet headers			DONE
+fix port usage vs multiple pcaps				DONE
+fix output filename when infile is in another path		DONE
+print output filenames: "file x.pcap has ben created"		DONE
+remove -i							DONE
+fix segv when infile is a directory				DONE
+check end of file and trailer for smtp/pop3/imap
+add uuencode to pop3/imap
+
