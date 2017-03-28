@@ -24,7 +24,7 @@
 	Renamed tcpTeardown() to tcpShutdown()
 
 1.11
-        Fixed a small bug in the http part, which resulted in the 4 closing tcp packets to have the wrong timestamp(Thanks Eric Moret (eric.moret@gmail.com) !
+        Fixed a small bug in the http part, which resulted in the 4 closing tcp packets to have the wrong timestamp. Thanks Eric Moret (eric.moretATgmail.com) !
 
 1.1
 	Now supports IPv6
