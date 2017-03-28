@@ -66,7 +66,7 @@ struct handover hoFtp;
 
 
 void usage() {
-	char *helptext = 	"\nfile2pcap - written by mzeiser@cisco.com\n"\
+	char *helptext = 	"\nfile2pcap - developed by Martin Zeiser(mzeiser@cisco.com)\n"\
 				"Version: " VERSION "\n"\
 				"Takes a file as input and creates a pcap showing that file being transferred between hosts\n"\
 				"\nOptions:\n"\
