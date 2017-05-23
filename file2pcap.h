@@ -1,6 +1,5 @@
 #include <sys/stat.h>
-#include <netinet/ip6.h>      // struct ip6_hdr
-
+#include <netinet/in.h>
 
 #define VERSION         "1.24"
 
