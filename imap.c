@@ -20,7 +20,8 @@
 
 int imapRequest(struct handover *ho) {
 	char *badjoke;
-        char serverImapHeader[] =  "* OK [CAPABILITY IMAP4REV1 I18NLEVEL=1 LITERAL+ SASL-IR LOGIN-REFERRALS] [10.10.5.140] \r\nIMAP4rev1 2007e.404 at Tue, 9 Nov 2010 15:13:41 +0000 (WET)\r\n";
+	char serverMailHeader[5000];
+    char serverImapHeader[] =  "* OK [CAPABILITY IMAP4REV1 I18NLEVEL=1 LITERAL+ SASL-IR LOGIN-REFERRALS] [10.10.5.140] \r\nIMAP4rev1 2007e.404 at Tue, 9 Nov 2010 15:13:41 +0000 (WET)\r\n";
 	char clientUserPass[] = "A01 LOGIN user secret\r\n";
 	char serverOk[] = 	"A01 OK [CAPABILITY IMAP4REV1 I18NLEVEL=1 LITERAL+ IDLE UIDPLUS NAMESPACE CHILDREN MAILBOX-REFERRALS "\
 				"BINARY UNSELECT ESEARCH WITHIN SCAN SORT THREAD=REFERENCES THREAD=ORDEREDSUBJECT MULTIAPPEND] User user authenticated\r\n";
@@ -33,8 +34,9 @@ int imapRequest(struct handover *ho) {
 	char clientFetch[] = "A04 UID FETCH 1 (UID RFC822.SIZE BODY.PEEK[]<0.65536>)\r\n";
 	char serverFetch[] = "* 1 FETCH (UID 1 RFC822.SIZE 117982 BODY[]<0> {65536}\r\n";
 
+/*
 	char serverMailHeader[] = "Return-Path: <" SRC_EMAIL ">\r\n"\
-		"Delivered-To: " MAILHOST "-"DST_EMAIL "\r\n"\
+		"Delivered-To: " MAILHOST "-" DST_EMAIL "\r\n"\
 		"Received: (qmail 12912 invoked by uid 89); 26 May 2014 10:14:00 -0000\r\n"\
 		"Received: by simscan 1.4.0 ppid: 12861, pid: 12896, t: 0.8526s\r\n"\
 		"         scanners: clamav: 0.95.2/m:51/d:9604\r\n"\
@@ -51,6 +53,8 @@ int imapRequest(struct handover *ho) {
 		"Importance: normal\r\n"\
 		"Sensitivity: Normal\r\n"\
 		"X-Priority: 3\r\n\r\n";
+*/
+	snprintf(serverMailHeader, sizeof(serverMailHeader)-1, IMAPSERVERMAILHEADER, ho->srcEmail, ho->dstEmail, MAILHOST);
 
 	char serverMailText[] = "--refeics-138facf0-915a-4457-8ff5-a6982ea42135\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n";
 	char serverAttachmentHeader[] = "--refeics-138facf0-915a-4457-8ff5-a6982ea42135\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename=";

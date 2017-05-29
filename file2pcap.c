@@ -14,6 +14,7 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <libgen.h>
+#include <getopt.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -70,11 +71,12 @@ void usage() {
 				"Version: " VERSION "\n"\
 				"Takes a file as input and creates a pcap showing that file being transferred between hosts\n"\
 				"\nOptions:\n"\
-				"-e encoding\t\t0 - base64\n"
+				"-e, --encoding encoding\r\n"
+				"\t\t\t0 - base64\n"
 				"\t\t\t1 - quoted printable\n"
 				"\t\t\t2 - UU encoding\n"
 				"\t\t\t[default: base64]\n"\
-				"-m mode\r\n"
+				"-m, --mode mode\r\n"
 				"\t\t\th - http GET (download)\r\n"
 				"\t\t\th2 - http2 GET (download)\r\n"
 				"\t\t\tH - http POST (upload)\r\n"
@@ -84,12 +86,17 @@ void usage() {
 				"\t\t\tf - active ftp\r\n"
 				"\t\t\tF - passive ftp\r\n"
 				"\t\t\t[default: http GET]\n\n"\
-				"-o outfile\t\toutput filename [default: <filename>-<protocol>.pcap]\n"\
-				"-p port[:port]\t\tspecify [source and] destination port\n"
+				"-o, --outfile outfile\t\toutput filename [default: <filename>-<protocol>.pcap]\n"\
+				"-p, --port port[:port]\t\tspecify [source and] destination port\n"
 				"\t\t\t-p 8080 will simulate a connection from a random port to port 8080\n"
 				"\t\t\t-p 1234:80 will simulate a connection from port 1234 to port 80\n"
 				"\t\t\t[default: use IANA assigned port for the protocol]\n\n"
-				"-6\t\t\tUse IPv6 instead of the default IPv4\n";
+				"-6\t\t\tUse IPv6 instead of the default IPv4\n"\
+				"-D, --dstip IP\t\tspecify destination IP address\n"
+				"-S, --srcip IP\t\tspecify source IP address\n"
+				"-d, --dstemail email_address\t\tspecify the recipient's email address\n"
+				"-s, --srcemail email_address\t\tspecify the sender's email address\n";				
+				
 	char *usage = 		"\nUsage:\n"\
 				"\t\t\tfile2pcap [options] infile\n";
 	char *example =		"Examples:\n"\
@@ -419,7 +426,6 @@ int tcpSendString(struct handover *ho, char *string, char direction) {
 	ho->time = ph.time;
 	ho->usec = ph.usec;
 
-
 return strlen(string);
 }
 
@@ -562,7 +568,7 @@ int openOutFile(struct handover *ho, char *inFileName, char *suffix){
         else
                 ho->outFile = outFile;
 
-	printf("Writing to %s\n", buffer);
+	printf("  - Writing to %s\n", buffer);
 
         write(fileno(outFile), &pcap_file_header, sizeof(pcap_file_header));
 
@@ -791,12 +797,30 @@ return 0;
 
 
 int main(int argc, char **argv) {
-	char *modeString=NULL, *srcFile=NULL, *dstFile=NULL, *portString=NULL, *tok1=NULL, *tok2=NULL, *encoderString=NULL;
+	char *modeString=NULL, *srcFile=NULL, *dstFile=NULL, *portString=NULL, *tok1=NULL, *tok2=NULL, *encoderString=NULL, *srcIP=NULL, *dstIP=NULL;
+	char srcEmail[255];
+	srcEmail[0] = 0;
+	char dstEmail[255];
+	dstEmail[0] = 0;
+
 	int c, i;
 	struct stat statbuf, statbuf2;
 	struct handover ho;
 	
-	
+    static struct option long_options[] =
+    {
+        {"encoding", required_argument, 0, 'e'},
+        {"mode", required_argument, 0, 'm'},
+        {"outfile", required_argument, 0, 'o'},
+        {"port", required_argument, 0, 'p'},
+        {"ipv6", no_argument, 0, '6'},
+        {"srcip", required_argument, 0, 's'},
+        {"dstip", required_argument, 0, 'd'},
+        {"srcemail", required_argument, 0, 'S'},
+        {"dstemail", required_argument, 0, 'D'},
+        {0, 0, 0, 0}
+    };	
+
 	if(argc < 2)
 		usage();
 
@@ -804,9 +828,10 @@ int main(int argc, char **argv) {
 	ho.ipV = 4;
 	hoFtp.ipV = 4;
 
-	while ((c = getopt (argc, argv, "e:m:o:p:6")) != -1)
-        {
-                switch (c)
+    int long_index =0;
+	while ((c = getopt_long_only(argc, argv, "e:m:o:p:s:d:S:D:6", long_options, &long_index)) != -1)
+    {
+        switch (c)
                 {
 			case 'e':
 				encoderString = (char*) strdup(optarg);
@@ -816,9 +841,9 @@ int main(int argc, char **argv) {
 				encoderString = (char*) strdup(optarg);
 				break;
 */
-        	        case 'm':
-        	                modeString = (char *) strdup (optarg);
-                	        break;
+        	case 'm':
+        	    modeString = (char *) strdup (optarg);
+                break;
 
 			case 'o':
 				dstFile = (char *) strdup(optarg);
@@ -831,6 +856,22 @@ int main(int argc, char **argv) {
 			case '6':
 				ho.ipV=6;
 				hoFtp.ipV = 6;
+				break;
+
+			case 's':
+				srcIP = (char *) strdup(optarg);
+				break;
+
+			case 'd':
+				dstIP = (char *) strdup(optarg);
+				break;
+
+			case 'S':
+				memcpy(srcEmail,(char *) strdup(optarg),sizeof(srcEmail)-1);
+				break;
+
+			case 'D':
+				memcpy(dstEmail,(char *) strdup(optarg),sizeof(dstEmail)-1);
 				break;
 /*
 			case 'v':
@@ -901,10 +942,8 @@ printf("POSITIVE! - #%s#\n", test);
 	srcport +=1025;
 	ho.srcPort=srcport;
 
-
-
-        ph.time = 0x48f35358;
-        ph.usec=0;
+    ph.time = 0x48f35358;
+    ph.usec=0;
 
 	//initialize the time in the handover struct. The times have to be correct in all streams
 	ho.time = ph.time;
@@ -913,8 +952,38 @@ printf("POSITIVE! - #%s#\n", test);
 
 
 	//fill all the parameters into the handover struct
-	ho.srcIP = inet_addr(SRC_IP4);
-	ho.dstIP = inet_addr(DST_IP4);
+	if(srcIP != NULL)
+	{
+        ho.srcIP = inet_addr(srcIP);
+        printf("  + Using custom source IP: %s\n", srcIP);
+    }
+	else
+	    ho.srcIP = inet_addr(SRC_IP4);
+	
+	if(dstIP != NULL)
+    {
+        ho.dstIP = inet_addr(dstIP);
+        printf("  + Using custom destination IP: %s\n", dstIP);
+    }
+	else
+	    ho.dstIP = inet_addr(DST_IP4);
+
+	if(srcEmail[0] != 0)
+	{
+        memcpy(ho.srcEmail, srcEmail, sizeof(srcEmail));
+        printf("  + Using custom source email: %s\n", ho.srcEmail);
+    }
+	else
+	    memcpy(ho.srcEmail, SRC_EMAIL, sizeof(SRC_EMAIL));
+	
+	if(dstEmail[0] != 0)
+	{
+        memcpy(ho.dstEmail, dstEmail, sizeof(dstEmail));
+        printf("  + Using custom destination email: %s\n", ho.dstEmail);
+    }
+	else
+	    memcpy(ho.dstEmail, DST_EMAIL, sizeof(DST_EMAIL));
+
 	inet_pton(AF_INET6, SRC_IP6, &(ho.srcIP6));
 	inet_pton(AF_INET6, DST_IP6, &(ho.dstIP6));
 	memcpy(ho.srcEther, SRC_ETHER, sizeof(ho.srcEther));

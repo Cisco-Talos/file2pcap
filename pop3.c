@@ -23,7 +23,8 @@
 int pop3Request(struct handover *ho) {
 	char buffer[5000];
 	char *badjoke=NULL;
-        char serverPop3Header[] =  "+OK Microsoft Exchange Server 2003 POP3 server version 6.5.7638.1 (server.testing) ready.\r\n";
+	char serverMailHeader[5000];
+    char serverPop3Header[] =  "+OK Microsoft Exchange Server 2003 POP3 server version 6.5.7638.1 (server.testing) ready.\r\n";
 	char clientUser[] = "USER user\r\n";
 	char serverOk[] = "+OK\r\n";
 	char clientPass[] = "PASS secret\r\n";
@@ -35,6 +36,7 @@ int pop3Request(struct handover *ho) {
 	char clientAttachmentSeparator[] = "--------------070104010108080805080502--\r\n.\r\n";
 	char serverClose[] = "+OK Microsoft Exchange Server 2003 POP3 server version 6.5.7638.1 signing off.\r\n";
 
+/*
 	char serverMailHeader[] = "Received: from " SRC_EMAIL " by (1.2.3.4:25) via " MAILHOST "\r\n"\
 		" (199.91.174.187:56258) with [" MAILHOST " SMTP Server] id 1405730148303.WH100\r\n"\
 		"  for " DST_EMAIL "; Fri, 23 May 2014 01:48:56 -0200\r\n"\
@@ -47,6 +49,9 @@ int pop3Request(struct handover *ho) {
 		"Subject: file2pcap\r\n"\
 		"Content-Type: multipart/mixed;\r\n"\
 		" boundary=\"------------070104010108080805080502\"\r\n\r\n";
+*/
+	snprintf(serverMailHeader, sizeof(serverMailHeader)-1, POPSERVERMAILHEADER, ho->srcEmail, ho->dstEmail, MAILHOST);
+
 	char serverMailBody[] = 		"This is a multi-part message in MIME format.\r\n"\
 						"--------------070104010108080805080502\r\n"\
 						"Content-Type: text/plain; charset=ISO-8859-2\r\n"\
@@ -80,7 +85,6 @@ int pop3Request(struct handover *ho) {
 	//FIXME - build 'OK' buffer with message size to send
 	snprintf(buffer, sizeof(buffer)-1, "+OK %d octets\r\n", 10000);	//FIXME
 	tcpSendString(ho, buffer, FROM_SERVER);
-
 	tcpSendString(ho, serverMailHeader, FROM_SERVER);
 	tcpSendString(ho, serverMailBody, FROM_SERVER);
 
