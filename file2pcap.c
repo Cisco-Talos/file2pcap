@@ -92,10 +92,10 @@ void usage() {
 				"\t\t\t-p 1234:80 will simulate a connection from port 1234 to port 80\n"
 				"\t\t\t[default: use IANA assigned port for the protocol]\n\n"
 				"-6\t\t\tUse IPv6 instead of the default IPv4\n"\
-				"-D, --dstip IP\t\tspecify destination IP address\n"
-				"-S, --srcip IP\t\tspecify source IP address\n"
-				"-d, --dstemail email_address\t\tspecify the recipient's email address\n"
-				"-s, --srcemail email_address\t\tspecify the sender's email address\n";				
+				"-d, --dstip IP\t\tspecify destination IP address\n"
+				"-s, --srcip IP\t\tspecify source IP address\n"
+				"-D, --dstemail email_address\t\tspecify the recipient's email address\n"
+				"-S, --srcemail email_address\t\tspecify the sender's email address\n";				
 				
 	char *usage = 		"\nUsage:\n"\
 				"\t\t\tfile2pcap [options] infile\n";
@@ -103,7 +103,8 @@ void usage() {
 				"\t\t\tfile2pcap malware.pdf\n"\
 				"\t\t\tfile2pcap -mshp malware.pdf\n"\
 				"\t\t\tfile2pcap -mH -p8080 malware.pdf\n"\
-				"\t\t\tfile2pcap -mi malware.pdf -o outfile.pcap\n";
+				"\t\t\tfile2pcap -mi malware.pdf -o outfile.pcap\n"\
+				"\t\t\tfile2pcap -mi -s 1.2.3.4 -d 5.6.7.8 -S src@example.com -D dst@example.com alware.pdf";
 
 	printf("%s\n", helptext);
 	printf("%s\n", usage);
