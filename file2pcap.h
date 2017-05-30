@@ -44,6 +44,8 @@ struct handover {
 	char protoEther[2];
 	char srcFile[200];
 	char dstFile[200];
+	char srcEmail[255];
+	char dstEmail[255];
 	char toEther[15];
 	char fromEther[15];
 	FILE *inFile;
