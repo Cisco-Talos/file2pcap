@@ -1,3 +1,13 @@
+1.25
+	Added gzip compression for HTTP
+	Added chunked encoding for HTTP
+	New parameter: --block-size. Allows to specify the payload size in
+	each packet
+	New parameter: --http-encoder. Allows to specify default, chunked,
+	gzip or gzip+chunked encoding for HTTP transfer
+	Source and destination IPv4 addresses can now be specified
+	Source and destination email addresses can now be specified
+
 1.24
 	Added support for HTTP/2 GET requests
 	Added uuencoding for email attachments
@@ -24,7 +34,7 @@
 	Renamed tcpTeardown() to tcpShutdown()
 
 1.11
-        Fixed a small bug in the http part, which resulted in the 4 closing tcp packets to have the wrong timestamp. Thanks Eric Moret (eric.moretATgmail.com) !
+	Fixed a small bug in the http part, which resulted in the 4 closing tcp packets to have the wrong timestamp. Thanks Eric Moret (eric.moretATgmail.com) !
 
 1.1
 	Now supports IPv6

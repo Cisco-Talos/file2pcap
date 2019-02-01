@@ -33,24 +33,8 @@ int imapRequest(struct handover *ho) {
 	char clientFetch[] = "A04 UID FETCH 1 (UID RFC822.SIZE BODY.PEEK[]<0.65536>)\r\n";
 	char serverFetch[] = "* 1 FETCH (UID 1 RFC822.SIZE 117982 BODY[]<0> {65536}\r\n";
 
-	char serverMailHeader[] = "Return-Path: <" SRC_EMAIL ">\r\n"\
-		"Delivered-To: " MAILHOST "-"DST_EMAIL "\r\n"\
-		"Received: (qmail 12912 invoked by uid 89); 26 May 2014 10:14:00 -0000\r\n"\
-		"Received: by simscan 1.4.0 ppid: 12861, pid: 12896, t: 0.8526s\r\n"\
-		"         scanners: clamav: 0.95.2/m:51/d:9604\r\n"\
-		"Received: from unknown (HELO " MAILHOST ") (bmE=@1.2.3.4) by " MAILHOST " with (DHE-RSA-AES256-SHA encrypted) SMTP; 26 May 2014 10:14:00 -0000\r\n"\
-		"Received: from [12.21.12.21] by " MAILHOST " with HTTP; Mon, 26 May 2014 12:13:56 +0200\r\n"\
-		"MIME-Version: 1.0\r\n"\
-		"Message-ID: <trinity-5335e8d2-aa96-4eb1-80cc-e9657b28fc65-1401099236666@" MAILHOST ">\r\n"\
-		"From: <" SRC_EMAIL ">\r\n"\
-		"To: " DST_EMAIL "\r\n"\
-		"Subject: file2pcap\r\n"\
-		"Content-Type: multipart/mixed;\r\n"\
-		" boundary=refeics-138facf0-915a-4457-8ff5-a6982ea42135\r\n"\
-		"Date: Mon, 26 May 2014 12:13:56 +0000\r\n"\
-		"Importance: normal\r\n"\
-		"Sensitivity: Normal\r\n"\
-		"X-Priority: 3\r\n\r\n";
+	char serverMailHeader[2000];	//see imap.h
+	snprintf(serverMailHeader, sizeof(serverMailHeader)-1, IMAPSERVERMAILHEADER, ho->srcEmail, ho->dstEmail, MAILHOST); 
 
 	char serverMailText[] = "--refeics-138facf0-915a-4457-8ff5-a6982ea42135\r\nContent-Type: text/plain; charset=UTF-8\r\n\r\n";
 	char serverAttachmentHeader[] = "--refeics-138facf0-915a-4457-8ff5-a6982ea42135\r\nContent-Type: application/octet-stream\r\nContent-Disposition: attachment; filename=";

@@ -2,12 +2,11 @@ CC = gcc
 
 
 
-file2pcap: file2pcap.o ftp.o http.o http2.o smtp.o pop3.o helpers.o imap.o quoted-printable.o
-	$(CC) -Wall -o file2pcap file2pcap.c ftp.c http.c http2.c smtp.c pop3.c helpers.c imap.c quoted-printable.c
+file2pcap: crc32.o file2pcap.o ftp.o http.o http2.o http-gzip.o smtp.o pop3.o helpers.o imap.o quoted-printable.o
+	$(CC) -o file2pcap crc32.c file2pcap.c ftp.c http.c http2.c http-gzip.c smtp.c pop3.c helpers.c imap.c quoted-printable.c -lz
 
 clean:
 	@rm *.o
-	@rm *.pcap
 	@rm file2pcap
 
 install:

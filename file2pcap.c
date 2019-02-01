@@ -14,10 +14,14 @@
 #include <sys/stat.h>
 #include <time.h>
 #include <libgen.h>
+#include <getopt.h>
+
 
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <errno.h>
+
 
 
 
@@ -33,10 +37,11 @@
 #include "ftp.h"
 #include "http.h"
 #include "http2.h"
+#include "http-gzip.h"
 #include "smtp.h"
 #include "pop3.h"
 #include "imap.h"
-
+#include "crc32.h"
 
 
 struct 	{
@@ -50,12 +55,10 @@ struct 	{
 	} pcap_file_header = { 0xA1B2C3D4,2,4,0,0,65535,1};
 
 FILE *inFile, *outFile;
-
+	
 
 const int packetLen4 = (sizeof(SRC_ETHER)-1 + sizeof(DST_ETHER)-1 + sizeof(PROTO_ETHER)-1 + sizeof(struct ip) + sizeof(struct tcphdr));
 const int packetLen6 = (sizeof(SRC_ETHER)-1 + sizeof(DST_ETHER)-1 + sizeof(PROTO_ETHER6)-1 + sizeof(struct ip6_hdr) + sizeof(struct tcphdr));
-
-
 
 
 struct handover hoFtp;
@@ -70,10 +73,18 @@ void usage() {
 				"Version: " VERSION "\n"\
 				"Takes a file as input and creates a pcap showing that file being transferred between hosts\n"\
 				"\nOptions:\n"\
-				"-e encoding\t\t0 - base64\n"
+				"--block-size size\tspecify the payload size per packet[1 to 1200]\n\n"
+				"--srcemail address\tspecify the sender's email address\n"
+				"--dstemail address\tspecify the recipient's email address\n\n"
+				"-e email encoding\r\n"
+				"\t\t\t0 - base64\n"
 				"\t\t\t1 - quoted printable\n"
 				"\t\t\t2 - UU encoding\n"
-				"\t\t\t[default: base64]\n"\
+				"\t\t\t[default: base64]\n\n"\
+				"--http-encoder\t\t0 - default transfer\n"
+				"\t\t\t1 - gzip compression\n"
+				"\t\t\t2 - chunked encoding\n"
+				"\t\t\t3 - gzip compression and chunked encoding\n"
 				"-m mode\r\n"
 				"\t\t\th - http GET (download)\r\n"
 				"\t\t\th2 - http2 GET (download)\r\n"
@@ -89,12 +100,14 @@ void usage() {
 				"\t\t\t-p 8080 will simulate a connection from a random port to port 8080\n"
 				"\t\t\t-p 1234:80 will simulate a connection from port 1234 to port 80\n"
 				"\t\t\t[default: use IANA assigned port for the protocol]\n\n"
+				"--srcip ip_address\tspecify source IP address\n"
+				"--dstip ip_address\tspecify destination IP address\n\n"
 				"-6\t\t\tUse IPv6 instead of the default IPv4\n";
 	char *usage = 		"\nUsage:\n"\
 				"\t\t\tfile2pcap [options] infile\n";
 	char *example =		"Examples:\n"\
 				"\t\t\tfile2pcap malware.pdf\n"\
-				"\t\t\tfile2pcap -mshp malware.pdf\n"\
+				"\t\t\tfile2pcap -mshp malware.pdf --http-encoder=1\n"\
 				"\t\t\tfile2pcap -mH -p8080 malware.pdf\n"\
 				"\t\t\tfile2pcap -mi malware.pdf -o outfile.pcap\n";
 
@@ -252,13 +265,11 @@ int craftTcp(char *payload, int payloadSize, char direction, unsigned char flags
 	unsigned int minimalLength, minimalLength6;
 	unsigned char minimalip[(minimalLength = 12 + sizeof (struct tcphdr) + payloadSize)];
 	unsigned char minimalip6[(minimalLength6 = 40 + packetLen)];
-	char ipv4packet[sizeof(struct ip) + packetLen];
 	struct v6_pseudo_header *v6PseudoHeader = (struct v6_pseudo_header*)minimalip6;
 	
 
 	
 	memset (packet, 0, packetLen);
-	memset(ipv4packet, 0, sizeof(ipv4packet));
 	
 	if(payload!=NULL)
 		memcpy(((unsigned char*)(packet)) + sizeof (struct tcphdr), payload, payloadSize);
@@ -424,6 +435,75 @@ return strlen(string);
 }
 
 
+/**************************************************************************************************************/
+
+int tcpSendData(struct handover *ho, char *buffer, int length, char direction) {
+        int packetLen=-1, direction2=-1;
+
+        if(direction==TO_SERVER)
+        {
+                direction2 = FROM_SERVER;
+        }
+        else
+        {
+                direction2 = TO_SERVER;
+        }
+
+	if(ho->ipV == 4)
+        	packetLen = packetLen4 + length;
+	else
+		packetLen = packetLen6 + length;
+
+	ph.time = ho->time;
+	ph.usec = ho->usec;
+
+        
+	ph.usec += INTERVAL;
+	
+	if((ph.usec + INTERVAL) >= 1000000)
+	{
+		ph.time+=1;
+		ph.usec=0;
+	}
+	
+
+        ph.length1 = packetLen;
+        ph.length2 = packetLen;
+
+        write(fileno(ho->outFile), &ph, sizeof(struct pcap_packet_header));
+    
+
+	if(direction == TO_SERVER)
+		write(fileno(ho->outFile), ho->toEther, sizeof(ho->toEther)-1);
+	else
+		write(fileno(ho->outFile), ho->fromEther, sizeof(ho->fromEther)-1);
+	
+
+        craftTcp(buffer, length, direction, TH_ACK|TH_PUSH, ho);
+
+        //and now send the ack
+        ph.usec+=INTERVAL;
+        ph.length1=packetLen-length;
+        ph.length2=packetLen-length;
+        write(fileno(ho->outFile), &ph, sizeof(struct pcap_packet_header));
+
+	if(direction == TO_SERVER)
+	        write(fileno(ho->outFile), ho->fromEther, sizeof(ho->fromEther)-1);
+	else
+	        write(fileno(ho->outFile), ho->toEther, sizeof(ho->toEther)-1);
+	
+
+        craftTcp(NULL,0, direction2, TH_ACK, ho);
+
+	ho->time = ph.time;
+	ho->usec = ph.usec;
+
+
+return length;
+}
+
+
+
 
 /**********************************************************************************************/
 
@@ -556,7 +636,6 @@ int openOutFile(struct handover *ho, char *inFileName, char *suffix){
         if((outFile = fopen(buffer, "w"))==NULL)
         {
                 printf("Failed to open outfile %s\n", buffer);
-//                fclose(inFile);
                 exit(-1);
         }
         else
@@ -623,12 +702,12 @@ int ftp(struct handover *ho, char mode) {
 		memcpy(hoFtp.protoEther, PROTO_ETHER6, 2);
 
 
-	snprintf(hoFtp.srcFile, sizeof(hoFtp.srcFile)-1,"%s", ho->srcFile);
+	if(ho->srcFile != NULL)
+		snprintf(hoFtp.srcFile, sizeof(hoFtp.srcFile),"%s", ho->srcFile);
 
 	if(ho->dstFile != NULL)
-		snprintf(hoFtp.dstFile, sizeof(hoFtp.dstFile)-1,"%s", ho->dstFile);
+		snprintf(hoFtp.dstFile, sizeof(hoFtp.dstFile),"%s", ho->dstFile);
 	
-//	ho.outFile = NULL;
 	hoFtp.dstPort = 20;
 
 	if(mode == PASSIVE_FTP)
@@ -658,10 +737,6 @@ int ftp(struct handover *ho, char mode) {
 	}
 
 
-
-
-
-
 	tcpHandshake(ho);
 
 	if(mode == ACTIVE_FTP)
@@ -687,13 +762,19 @@ return 0;
 
 
 int httpGet(struct handover *ho) {
+	int ret;
 
         tcpHandshake(ho);
+
+	if(ho->httpEncoder == ENC_HTTP_GZIP || ho->httpEncoder == ENC_HTTP_GZIP_CHUNKED) 
+		compressGzip(ho);
+
 	httpGetRequest(ho);
         httpGetRequestAcknowledge(ho);
 	ho->direction = FROM_SERVER;
         httpTransferFile(ho);   
-        tcpShutdown(ho);
+
+	tcpShutdown(ho);
 
 return 0;
 }
@@ -707,7 +788,6 @@ int http2Get(struct handover *ho) {
 	http2ConnectionUpgrade(ho);
 	http2SwitchingProtocols(ho);
 	http2ClientMagic(ho);
-//	http2MagicGetRequest(ho);
 
 	//send settings from server to client	
 	ho->direction = FROM_SERVER;
@@ -791,31 +871,110 @@ return 0;
 
 
 int main(int argc, char **argv) {
-	char *modeString=NULL, *srcFile=NULL, *dstFile=NULL, *portString=NULL, *tok1=NULL, *tok2=NULL, *encoderString=NULL;
-	int c, i;
+	char *modeString=NULL, *srcFile=NULL, *dstFile=NULL, *portString=NULL, *tok1=NULL, *tok2=NULL, *encoderString=NULL, *httpEncoderString=NULL, *srcEmail=NULL, *dstEmail=NULL;
+	char *srcIP=NULL, *dstIP=NULL;
+	int c, i, option_index=0;
 	struct stat statbuf, statbuf2;
 	struct handover ho;
-	
+	static struct option long_options[] =
+	{
+		{"6", no_argument, 0, '6'},
+		{"block-size", required_argument, 0, 0},
+//		{"chunk-size", required_argument, 0, 0},
+		{"dstemail", required_argument, 0, 0},
+		{"dstip", required_argument, 0, 0},
+		{"email-encoder", required_argument, 0, 'e'},
+		{"http-encoder", required_argument, 0, 0},
+		{"mode", required_argument, 0, 'm'},
+		{"outfile", required_argument, 0, 'o'},
+		{"port", required_argument, 0, 'p'},
+		{"srcemail", required_argument, 0, 0},
+		{"srcip", required_argument, 0, 0},
+		{"verbose", no_argument, 0, 'v'},
+		{0, 0, 0, 0}
+	};
+
+
 	
 	if(argc < 2)
 		usage();
 
+
+	memset(ho.srcEmail, 0, sizeof(ho.srcEmail));
+	memset(ho.dstEmail, 0, sizeof(ho.dstEmail));
+
 	//Default is IPv4
 	ho.ipV = 4;
+	ho.verbose=FALSE;
+	ho.blockSize=READ_SIZE;
+	ho.srcIP = inet_addr(SRC_IP4);
+	ho.dstIP = inet_addr(DST_IP4);
+	
 	hoFtp.ipV = 4;
 
-	while ((c = getopt (argc, argv, "e:m:o:p:6")) != -1)
+	ho.httpEncoder = ENC_HTTP_DEFAULT;
+	snprintf(ho.srcEmail, sizeof(ho.srcEmail)-1, "%s", SRC_EMAIL);
+	snprintf(ho.dstEmail, sizeof(ho.dstEmail)-1, "%s", DST_EMAIL);
+
+	while ((c = getopt_long (argc, argv, "e:m:o:p:v6", long_options, &option_index)) != -1)
         {
+		if(c == -1)
+			break;
+
                 switch (c)
                 {
+		
+			case 0:	//long option names
+//				printf("option %s", long_options[option_index].name);
+				
+				if (strcmp(long_options[option_index].name, "http-encoder")==0)
+				{
+					httpEncoderString = (char*) strdup(optarg);
+					break;			   
+				}
+				else if(strcmp(long_options[option_index].name,"block-size")==0)
+				{
+					ho.blockSize = atoi((char*) strdup(optarg));
+					if(ho.blockSize < 0 || ho.blockSize > 1200)
+					{
+						usage();
+						exit(-1);
+					}
+					break;
+				}	
+				else if(strcmp(long_options[option_index].name,"srcemail")==0)
+				{
+					srcEmail = (char*) strdup(optarg);
+					break;
+				}	
+				else if(strcmp(long_options[option_index].name,"dstemail")==0)
+				{
+					dstEmail = (char*) strdup(optarg);
+					break;
+				}	
+				else if(strcmp(long_options[option_index].name,"srcip")==0)
+                                {
+                                        srcIP = (char*) strdup(optarg);
+                                        break;
+                                }
+                                else if(strcmp(long_options[option_index].name,"dstip")==0)
+                                {
+                                        dstIP = (char*) strdup(optarg);
+                                        break;
+                                }
+
+				else
+				{		
+        	               		printf("Unknown parameter %s with arg %s", long_options[option_index].name, optarg);
+					usage();
+					exit(-1);
+					break;
+				}
+
 			case 'e':
 				encoderString = (char*) strdup(optarg);
 				break;
 
-/*			case 'f':
-				encoderString = (char*) strdup(optarg);
-				break;
-*/
         	        case 'm':
         	                modeString = (char *) strdup (optarg);
                 	        break;
@@ -832,18 +991,18 @@ int main(int argc, char **argv) {
 				ho.ipV=6;
 				hoFtp.ipV = 6;
 				break;
-/*
-			case 'v':
-				test = (char*)strdup(optarg);
-				if(test != NULL)
-printf("POSITIVE! - #%s#\n", test);
+
+ 			case 'v':
+				ho.verbose=TRUE;
 				break;
-*/			
+			
 			default:
 				usage();
 				exit(0);
 		}
 	}
+
+	unlink(TMP_FILE); 
 
 
 	if(optind < argc)
@@ -851,6 +1010,22 @@ printf("POSITIVE! - #%s#\n", test);
 		srcFile = (char*) strdup(argv[optind]);
 	}
 
+
+	if(srcEmail != NULL)
+	{
+		snprintf(ho.srcEmail, sizeof(ho.srcEmail)-1,"%s", srcEmail);
+		if(ho.verbose==TRUE)
+			printf("Using custom source email address: %s\n", srcEmail);
+	}
+
+	if(dstEmail != NULL)
+	{
+		snprintf(ho.dstEmail, sizeof(ho.dstEmail)-1, "%s", dstEmail);
+		if(ho.verbose==TRUE)
+			printf("Using custom destination email address: %s\n", dstEmail);
+	}
+					
+		
 
         if((srcFile == NULL))
 	{
@@ -884,15 +1059,7 @@ printf("POSITIVE! - #%s#\n", test);
 		hoFtp.inFile=inFile;
 	}
 
-
-
-	if(fstat(fileno(inFile), &fileStat) == -1)
-	{
-		printf("Failed to read size of %s\n", srcFile);
-		fclose(inFile);
-		exit(-1);
-	}
-
+	ho.inFileSize = statbuf.st_size;
 
 	//init the PRNG
 	srand(time(NULL));
@@ -911,10 +1078,20 @@ printf("POSITIVE! - #%s#\n", test);
 	ho.usec = ph.usec;
 
 
+	if(srcIP != NULL)
+	{
+        	ho.srcIP = inet_addr(srcIP);
+		if(ho.verbose==TRUE)
+	        	printf("Using custom source IP: %s\n", srcIP);
+    	}
+	
+	if(dstIP != NULL)
+	{
+        	ho.dstIP = inet_addr(dstIP);
+		if(ho.verbose==TRUE)
+	        	printf("Using custom destination IP: %s\n", dstIP);
+	}
 
-	//fill all the parameters into the handover struct
-	ho.srcIP = inet_addr(SRC_IP4);
-	ho.dstIP = inet_addr(DST_IP4);
 	inet_pton(AF_INET6, SRC_IP6, &(ho.srcIP6));
 	inet_pton(AF_INET6, DST_IP6, &(ho.dstIP6));
 	memcpy(ho.srcEther, SRC_ETHER, sizeof(ho.srcEther));
@@ -1001,10 +1178,34 @@ printf("POSITIVE! - #%s#\n", test);
 			case 1:
 				ho.encoder = ENC_QUOTED_PRINTABLE;
 				break;
-
 			case 2:
 				ho.encoder = ENC_UU;
 				break;
+
+		}		
+	}
+	
+
+
+	if(httpEncoderString != NULL)
+	{
+		switch(atoi(httpEncoderString))
+		{
+			case 0:
+				ho.httpEncoder = ENC_HTTP_DEFAULT;
+				break;
+			case 1:
+				ho.httpEncoder = ENC_HTTP_GZIP;
+				break;
+			case 2:
+				ho.httpEncoder = ENC_HTTP_CHUNKED;
+				break;
+			case 3:
+				ho.httpEncoder = ENC_HTTP_GZIP_CHUNKED;
+				break;
+			default:
+				usage();
+				exit(-1);
 
 		}		
 	}
@@ -1055,7 +1256,6 @@ printf("POSITIVE! - #%s#\n", test);
 
 					fclose(ho.outFile);
 					ho.dstPort = 0;
-//					modeString[i] = '\0';
 					break;
 
 				case 'h':
@@ -1146,6 +1346,7 @@ printf("POSITIVE! - #%s#\n", test);
 	}
 
 
+	unlink(TMP_FILE);  
 exit(0);
 }
 

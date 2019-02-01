@@ -1,9 +1,12 @@
 #include <sys/stat.h>
-#include <netinet/in.h>
+#include <netinet/in.h>      // struct ip6_hdr
 
-#define VERSION         "1.24"
+
+#define VERSION         "1.25"
 
 #define INTERVAL        13000   //About 70 packets per second
+#define READ_SIZE	1200
+
 
 #define TO_SERVER       0
 #define FROM_SERVER     1
@@ -23,13 +26,22 @@
 #define DST_EMAIL	"def@cisco.com"
 #define MAILHOST	"cisco.com"
 
-#define ENC_BASE64 		0
-#define ENC_QUOTED_PRINTABLE 	1
-#define ENC_UU			2
+#define ENC_BASE64 		0x00
+#define ENC_QUOTED_PRINTABLE 	0x01
+#define ENC_UU			0x02
+
+#define ENC_HTTP_DEFAULT	0x10
+#define ENC_HTTP_GZIP		0x11
+#define ENC_HTTP_CHUNKED	0x12
+#define ENC_HTTP_GZIP_CHUNKED	0x13
 
 #define ACTIVE_FTP		0
 #define PASSIVE_FTP		1
 
+#define TRUE 			1
+#define FALSE 			0
+
+#define TMP_FILE		"file2pcap.tmp"
 
 struct handover {
 	unsigned int srcIP;
@@ -39,17 +51,25 @@ struct handover {
 	unsigned short srcPort;
 	unsigned short dstPort;
 	int seq, ack_seq;
+	int blockSize;
+//	int chunkSize;
+	int inFileSize;
 	char srcEther[6];
 	char dstEther[6];
 	char protoEther[2];
 	char srcFile[200];
 	char dstFile[200];
+	char srcEmail[255];
+	char dstEmail[255];
 	char toEther[15];
 	char fromEther[15];
 	FILE *inFile;
 	FILE *outFile;
+	FILE *tmpFile;
 	char encoder;
+	char httpEncoder;
 	char direction;
+	char verbose;
 	int time;
 	int usec;
 	char ipV;	//IP version - 4 or 6
@@ -73,9 +93,7 @@ struct v6_pseudo_header
 	} v6ph;
 
 
-//int 		seq, ack_seq;
 unsigned short 	srcport, dstport;
-struct 		stat fileStat;
 
 
 int craftTcp(char *payload, int payloadSize, char direction, unsigned char flags, struct handover *ho);
@@ -86,6 +104,8 @@ int craftIpv6(char *payload, int payloadSize, char direction, struct handover *h
 
 
 int tcpSendString(struct handover *ho, char *string, char direction);
+int tcpSendData(struct handover *ho, char *buffer, int length, char direction);
+
 
 int ftp(struct handover *ho, char mode);
 

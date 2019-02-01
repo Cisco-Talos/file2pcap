@@ -155,7 +155,7 @@ return joke;
 int transferFileBase64(struct handover *ho) {
         unsigned int count;
         char buffer[1500], buffer2[60];
-        int bufferspace=1200;
+        int bufferspace=ho->blockSize;
         size_t i = -1;
         char *encodedbuffer=NULL;
 
@@ -173,9 +173,11 @@ int transferFileBase64(struct handover *ho) {
 
                 if(count<=0)
                 {
-                        if(bufferspace != 1200)
+                        if(bufferspace != ho->blockSize)
+			{
                                 tcpSendString(ho, buffer, ho->direction);
 				memset(buffer, 0, sizeof(buffer));
+			}
                         break;
                 }
 
@@ -195,7 +197,7 @@ int transferFileBase64(struct handover *ho) {
                 {
                         tcpSendString(ho, buffer, ho->direction);
                         memset(buffer, 0, sizeof(buffer));
-                        bufferspace = 1200;
+                        bufferspace = ho->blockSize;
                 }
 
         }
@@ -227,9 +229,11 @@ int transferFileUU(struct handover *ho) {
                 if(count<=0)
                 {
                         if(bufferspace != 620)
+			{
                                 tcpSendString(ho, buffer, ho->direction);
 				memset(buffer, 0, sizeof(buffer));
-                        break;
+			}
+	                break;
                 }
 
 

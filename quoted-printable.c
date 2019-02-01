@@ -46,6 +46,7 @@ static int EBCDIC_out= FALSE;
 char hexbuffer[10];
 char encodedData[20];
 
+
 /******************************************************************************************************************************************/
 
 /* This is the entry point for this file. 
@@ -55,7 +56,7 @@ char encodedData[20];
 
 int transferFileQuotedPrintable(struct handover *ho) {
         char buffer[1500], buffer2[60];
-        int bufferspace=1200, ch;
+        int bufferspace=ho->blockSize, ch;
 
         memset(buffer, 0, sizeof(buffer));
         memset(buffer2, 0, sizeof(buffer2));
@@ -78,7 +79,7 @@ int transferFileQuotedPrintable(struct handover *ho) {
                 {
                         tcpSendString(ho, buffer, ho->direction);
                         memset(buffer, 0, sizeof(buffer));
-                        bufferspace = 1200;
+                        bufferspace = ho->blockSize;
                 }
 
         }
@@ -100,7 +101,7 @@ int transferFileQuotedPrintable(struct handover *ho) {
 	}
 
 
-	if(bufferspace != 1200)
+	if(bufferspace != ho->blockSize)
 		tcpSendString(ho, buffer, ho->direction);
 
 

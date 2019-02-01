@@ -24,17 +24,22 @@
 int smtpRequest(struct handover *ho) {
 	char buffer[5000];
 	char *badjoke = NULL;
-        char serverSmtpHeader[] =  "220 " MAILHOST " ESMTP Sendmail 8.14.5/8.14.5; Thu, 22 May 2014 12:12:12 GMT\r\n";
+char clientMailFrom[500], serverSenderOk[500], clientReceiptTo[500], serverRecipientOk[500], clientMailBody[1100]; 
+	char serverSmtpHeader[] =  "220 " MAILHOST " ESMTP Sendmail 8.14.5/8.14.5; Thu, 22 May 2014 12:12:12 GMT\r\n";
 	char clientEhlo[] = "EHLO user\r\n";
 	char serverOptions1[] = "250-" MAILHOST " Hello user." MAILHOST " [10.1.2.3], pleased to meet you\r\n";
 	char serverOptions2[] = "250-ENHANCEDSTATUSCODES\r\n250-PIPELINING\r\n250-EXPN\r\n250-VERB\r\n250-8BITMIME\r\n250-SIZE 32000000\r\n250-DSN\r\n250-ETRN\r\n250-STARTTLS\r\n250-DELIVERBY\r\n250 HELP\r\n";
-	char clientMailFrom[] = "MAIL FROM:<" SRC_EMAIL "> SIZE="; //FIXME - size is dynamic
-	char serverSenderOk[] = "250 2.1.0 <" SRC_EMAIL ">... Sender ok\r\n";
-	char clientReceiptTo[] = "RCPT TO:<" DST_EMAIL ">\r\n";
-	char serverRecipientOk[] = "250 2.1.5 <" DST_EMAIL ">... Recipient ok\r\n";
+	//char clientMailFrom[] = "MAIL FROM:<" ho.srcEmail "> SIZE="; //FIXME - size is dynamic
+	snprintf(clientMailFrom, sizeof(clientMailFrom)-1, CLIENTMAILFROM, ho->srcEmail);
+	//char serverSenderOk[] = "250 2.1.0 <" ho.srcEmail ">... Sender ok\r\n";
+	snprintf(serverSenderOk, sizeof(serverSenderOk)-1, SERVERSENDEROK, ho->srcEmail);
+	//char clientReceiptTo[] = "RCPT TO:<" ho.dstEmail ">\r\n";
+	snprintf(clientReceiptTo, sizeof(clientReceiptTo)-1, CLIENTRECEIPTTO, ho->dstEmail);
+	//char serverRecipientOk[] = "250 2.1.5 <" ho.dstEmail ">... Recipient ok\r\n";
+	snprintf(serverRecipientOk, sizeof(serverRecipientOk)-1, SERVERRECIPIENTOK, ho->dstEmail);
 	char clientData[] = "DATA\r\n";
 	char serverEnterMail[] = "354 Enter mail, end with \".\" on a line by itself\r\n";
-
+/*
 	char clientMailBody[] = "Message-ID: <537DC502.5080409@" MAILHOST ">\r\n"\
 		"Date: Thu, 22 May 2014 11:36:02 +0200\r\n"\
 		"From: <" SRC_EMAIL ">\r\n"\
@@ -49,6 +54,10 @@ int smtpRequest(struct handover *ho) {
 		"--------------020106020307040709020108\r\n"\
 		"Content-Type: text/plain; charset=ISO-8859-1\r\n"\
 		"Content-Transfer-Encoding: 7bit\r\n\r\n";
+*/	
+	//see smtp.h for CLIENTMAILBODY
+	snprintf(clientMailBody, sizeof(clientMailBody)-1, CLIENTMAILBODY, ho->srcEmail, ho->dstEmail); 
+
 	char clientAttachmentSeparator1[] = "--------------020106020307040709020108\r\n";
 	char clientAttachment2b64[] = "\r\nContent-Transfer-Encoding: base64\r\nContent-Disposition: attachment; filename=\"";
 	char clientAttachment2qp[] = "\r\nContent-Transfer-Encoding: quoted-printable\r\nContent-Disposition: attachment; filename=\"";

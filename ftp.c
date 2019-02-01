@@ -168,7 +168,7 @@ int ftpTransferFile(struct handover *ho) {
 
         while(!(feof(ho->inFile)))
         {
-                count=read(fileno(ho->inFile), buffer, 1200);
+                count=read(fileno(ho->inFile), buffer, ho->blockSize);
 
                 if(count<=0)
                 {
@@ -219,13 +219,6 @@ int ftpTransferFile(struct handover *ho) {
 			craftTcp(NULL,0, TO_SERVER, TH_ACK, ho);   
 		}
 		
-/*
-		if(ho->direction == TO_SERVER)
-	                craftTcp(NULL,0, FROM_SERVER, TH_ACK, ho);   
-		else
-	                craftTcp(NULL,0, TO_SERVER, TH_ACK, ho);   
-*/
-	
         }
 
 	ho->time = ph.time;

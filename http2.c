@@ -15,21 +15,11 @@
 
 
 extern int packetLen4, packetLen6;
-extern struct stat fileStat;
 
 /**************************************************************************/
 
 int http2ConnectionUpgrade(struct handover *ho) {
 	char *encoded=NULL;
-
-/*	char requestEnd[] =	"Host: wrl\r\n"
-				"User-Agent: curl/7.52.1\r\n"
-				"Accept: * / *\r\n"
-				"Connection: Upgrade, HTTP2-Settings\r\n"
-				"Upgrade: h2c\r\n"
-				"HTTP2-Settings: AAMAAABkAARAAAAA\r\n\r\n";
-*/
-
 	char requestEnd[] = 	"Host: wrl\r\n"
                                 "User-Agent: Mozilla/5.0 (X11; U; Linux i686; en-US; rv:1.8.1.17) Gecko/20081007 Firefox/2.0.0.17\r\n"
 				"Accept: */*\r\n"
@@ -526,7 +516,7 @@ int http2Headers(struct handover *ho) {
 	
 
 	memset(temp, 0, sizeof(temp));
-	snprintf(temp, sizeof(temp)-1, "%d",(unsigned int)fileStat.st_size);
+	snprintf(temp, sizeof(temp)-1, "%d",(unsigned int)ho->inFileSize);
 	filelenLen = (char)strlen(temp);
 	char *bufferPointer;
 
@@ -534,8 +524,7 @@ int http2Headers(struct handover *ho) {
 	memcpy(&request, &serverHeader, sizeof(serverHeader));
 	request[26]=filelenLen;
 	bufferPointer = request+27;
-	sprintf(bufferPointer, "%d",(unsigned int)fileStat.st_size);
-
+	sprintf(bufferPointer, "%d",(unsigned int)ho->inFileSize);
 
 
 
@@ -627,7 +616,7 @@ int http2TransferFile(struct handover *ho) {
 
         while(!(feof(ho->inFile)))
         {
-                count=read(fileno(ho->inFile), buffer, 1200);
+                count=read(fileno(ho->inFile), buffer, ho->blockSize);
 
 		len = count;
 		data[0] = len / 65536;
