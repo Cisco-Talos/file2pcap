@@ -1262,18 +1262,18 @@ int main(int argc, char **argv) {
 					if(ho.dstPort == 0)
 						ho.dstPort = 80;
 
-					
-					if(modeString[i+1] == 0x00)
-					{
-						openOutFile(&ho, basename(srcFile), "-http-get.pcap");
-						httpGet(&ho);
-					}
-					else if(modeString[i+1] == '2')
+					if(modeString[i+1] == '2')
 					{
 						openOutFile(&ho, basename(srcFile), "-http2-get.pcap");
 						http2Get(&ho);
 						i++;
 					}
+					else
+					{
+						openOutFile(&ho, basename(srcFile), "-http-get.pcap");
+						httpGet(&ho);
+					}
+					
 					fclose(ho.outFile);
 					ho.dstPort = 0;
 					break;
