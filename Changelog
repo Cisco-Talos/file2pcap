@@ -1,3 +1,9 @@
+1.26
+	Bugfix in file2pcap.c. The -h flag would occasionally result in a
+	crash when used in combination with other flags, due to a missing
+	default case for an if() clause.
+	Bug reported by Mike Bautista. Thank you Mike!
+
 1.25
 	Added gzip compression for HTTP
 	Added chunked encoding for HTTP
