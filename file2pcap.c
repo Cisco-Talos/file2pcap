@@ -666,6 +666,7 @@ int ftp(struct handover *ho, char mode) {
 	//snprintf(hoFtp.srcFile, sizeof(hoFtp.srcFile)-1, "%s", ho->srcFile);
 	hoFtp.inFile = ho->inFile;
 	hoFtp.outFile = ho->outFile;
+	hoFtp.blockSize = ho->blockSize;
 
 	//fill all the parameters into the handover struct
 	if(mode == PASSIVE_FTP)

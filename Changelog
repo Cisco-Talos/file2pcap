@@ -1,3 +1,8 @@
+1.27
+	Bugfix in the ftp module. Due to an earlier code change, the data to
+	"send" was missing completely in the pcaps. So the ftp module was not 
+	operational. Fixed now. Thanks for reporting and fixing the issue Kelly!
+
 1.26
 	Bugfix in file2pcap.c. The -h flag would occasionally result in a
 	crash when used in combination with other flags, due to a missing
