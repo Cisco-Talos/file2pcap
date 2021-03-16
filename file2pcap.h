@@ -75,25 +75,25 @@ struct handover {
 	char ipV;	//IP version - 4 or 6
 };
 
-struct pcap_packet_header
-        {
-                int time;
-                int usec;
-                int length1;
-                int length2;
-        } ph;
+extern struct pcap_packet_header
+{
+  int time;
+  int usec;
+  int length1;
+  int length2;
+} ph;
 
-struct v6_pseudo_header 
-	{
-		char src[16];
-		char dst[16];
-		int length;
-		char zeroes[3];
-		char next_header;
-	} v6ph;
+extern struct v6_pseudo_header
+{
+  char src[16];
+  char dst[16];
+  int length;
+  char zeroes[3];
+  char next_header;
+} v6ph;
 
 
-unsigned short 	srcport, dstport;
+extern unsigned short 	srcport, dstport;
 
 
 int craftTcp(char *payload, int payloadSize, char direction, unsigned char flags, struct handover *ho);

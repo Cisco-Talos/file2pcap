@@ -1,0 +1,9 @@
+# Exclude compiled files
+*.o
+/file2pcap
+
+# Exclude pcap files
+*.pcap
+*.pcapng
+*.cap
+
