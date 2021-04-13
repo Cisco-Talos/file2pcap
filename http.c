@@ -222,7 +222,7 @@ int httpTransferFile(struct handover *ho) {
 			}
 			else if(ho->httpEncoder == ENC_HTTP_CHUNKED) 
 			{
-				tcpSendHttpChunked(ho, NULL, 0, FROM_SERVER);
+				tcpSendHttpChunked(ho, NULL, 0, TO_SERVER);
 			}
 
                         return 0;
@@ -230,11 +230,11 @@ int httpTransferFile(struct handover *ho) {
 
 		if(ho->httpEncoder == ENC_HTTP_CHUNKED || ho->httpEncoder == ENC_HTTP_GZIP_CHUNKED)
 		{
-			tcpSendHttpChunked(ho, buffer, count, FROM_SERVER);
+			tcpSendHttpChunked(ho, buffer, count, TO_SERVER);
 		}
 		else
 		{
-			tcpSendData(ho, buffer, count, FROM_SERVER);
+			tcpSendData(ho, buffer, count, TO_SERVER);
 		}
 
         }

@@ -43,6 +43,8 @@
 #include "imap.h"
 #include "crc32.h"
 
+unsigned short srcport, dstport;
+struct pcap_packet_header ph;
 
 struct 	{
 		int PCAPMAGIC;

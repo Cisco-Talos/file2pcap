@@ -2,7 +2,7 @@
 #include <netinet/in.h>      // struct ip6_hdr
 
 
-#define VERSION         "1.27"
+#define VERSION         "1.28"
 
 #define INTERVAL        13000   //About 70 packets per second
 #define READ_SIZE	1200
@@ -43,7 +43,8 @@
 
 #define TMP_FILE		"file2pcap.tmp"
 
-struct handover {
+struct handover 
+{
 	unsigned int srcIP;
 	unsigned int dstIP;
 	struct in6_addr srcIP6[16];
@@ -75,25 +76,25 @@ struct handover {
 	char ipV;	//IP version - 4 or 6
 };
 
-struct pcap_packet_header
-        {
-                int time;
-                int usec;
-                int length1;
-                int length2;
-        } ph;
+extern struct pcap_packet_header
+{
+	int time;
+	int usec;
+	int length1;
+	int length2;
+} ph;
 
-struct v6_pseudo_header 
-	{
-		char src[16];
-		char dst[16];
-		int length;
-		char zeroes[3];
-		char next_header;
-	} v6ph;
+extern struct v6_pseudo_header 
+{
+	char src[16];
+	char dst[16];
+	int length;
+	char zeroes[3];
+	char next_header;
+} v6ph;
 
 
-unsigned short 	srcport, dstport;
+extern unsigned short 	srcport, dstport;
 
 
 int craftTcp(char *payload, int payloadSize, char direction, unsigned char flags, struct handover *ho);
