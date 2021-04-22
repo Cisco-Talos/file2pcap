@@ -2,7 +2,7 @@
 #include <netinet/in.h>      // struct ip6_hdr
 
 
-#define VERSION         "1.28"
+#define VERSION         "1.29"
 
 #define INTERVAL        13000   //About 70 packets per second
 #define READ_SIZE	1200

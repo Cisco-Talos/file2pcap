@@ -1,3 +1,9 @@
+1.29
+	- BUGFIX: HTTP GET was broken after version 1.28, since it showed the
+	file as being sent from client to server, not the otehr way round.
+	Both HTTP POST and GET now show the correct directions in transferring
+	the files. Thanks again Nick!
+
 1.28
 	- Bugfix in the http module. The POST should obviously have the client
 	upload data to the server, not the other way round. Fixed now.

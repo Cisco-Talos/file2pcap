@@ -827,6 +827,7 @@ int httpPost(struct handover *ho) {
 
         tcpHandshake(ho);
 	httpPostRequest(ho);
+	ho->direction = TO_SERVER;
         httpTransferFile(ho);   
 	httpPostFinalBoundary(ho);
         tcpShutdown(ho);
