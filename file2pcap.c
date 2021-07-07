@@ -481,6 +481,7 @@ int tcpSendData(struct handover *ho, char *buffer, int length, char direction) {
 		write(fileno(ho->outFile), ho->fromEther, sizeof(ho->fromEther)-1);
 	
 
+
         craftTcp(buffer, length, direction, TH_ACK|TH_PUSH, ho);
 
         //and now send the ack
@@ -1283,8 +1284,16 @@ int main(int argc, char **argv) {
 					break;
 
 				case 'H':
+					if(ho.httpEncoder != ENC_HTTP_DEFAULT)
+					{
+						printf("HTTP Post currently supports default encoding only!\n");
+						exit(-1);
+					}
+
+
 					if(ho.dstPort == 0)
 						ho.dstPort = 80;
+				
 					openOutFile(&ho, basename(srcFile), "-http-post.pcap");
 					httpPost(&ho);
 					fclose(ho.outFile);
@@ -1293,8 +1302,15 @@ int main(int argc, char **argv) {
 
 
 				case 's':
+					if(ho.blockSize!=READ_SIZE)
+					{
+						printf("Blocksize cannot be used with SMTP\n");
+						exit(-1);
+					}
+
 					if(ho.dstPort == 0)
 						ho.dstPort = 25;
+
 					openOutFile(&ho, basename(srcFile), "-smtp.pcap");
 					smtp(&ho);
 					fclose(ho.outFile);
@@ -1302,8 +1318,15 @@ int main(int argc, char **argv) {
 					break;
 
 				case 'p':
+					if(ho.blockSize!=READ_SIZE)
+					{
+						printf("Blocksize cannot be used with POP3\n");
+						exit(-1);
+					}
+
 					if(ho.dstPort == 0)
 						ho.dstPort = 110;
+
                                         openOutFile(&ho, basename(srcFile), "-pop3.pcap");
 					pop3(&ho);
 					fclose(ho.outFile);
@@ -1311,8 +1334,15 @@ int main(int argc, char **argv) {
 					break;
 	
 				case 'i':
+					if(ho.blockSize!=READ_SIZE)
+                                        {
+                                                printf("Blocksize cannot be used with IMAP\n");
+                                                exit(-1);
+                                        }
+
 					if(ho.dstPort == 0)
 						ho.dstPort = 143;
+
                                         openOutFile(&ho, basename(srcFile), "-imap.pcap");
 					imap(&ho);
 					fclose(ho.outFile);

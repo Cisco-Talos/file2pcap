@@ -154,7 +154,7 @@ return joke;
 
 int transferFileBase64(struct handover *ho) {
         unsigned int count;
-        char buffer[1500], buffer2[60];
+        char buffer[1500], buffer2[60]; 
         int bufferspace=ho->blockSize;
         size_t i = -1;
         char *encodedbuffer=NULL;
@@ -163,6 +163,12 @@ int transferFileBase64(struct handover *ho) {
         memset(buffer2, 0, sizeof(buffer2));
 
 
+	if(ho->blockSize < 72)
+	{
+		printf("Block size too small. Must be bigger than 71\n");
+		return -1;
+	}	
+
         if(ho->inFile != NULL)
                 rewind(ho->inFile);
 
@@ -170,6 +176,7 @@ int transferFileBase64(struct handover *ho) {
         {
 		memset(buffer2, 0, sizeof(buffer2));
                 count=read(fileno(ho->inFile), buffer2, 54);
+
 
                 if(count<=0)
                 {

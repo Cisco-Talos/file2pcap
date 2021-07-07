@@ -2,7 +2,7 @@
 #include <netinet/in.h>      // struct ip6_hdr
 
 
-#define VERSION         "1.29"
+#define VERSION         "1.30"
 
 #define INTERVAL        13000   //About 70 packets per second
 #define READ_SIZE	1200
@@ -55,6 +55,7 @@ struct handover
 	int blockSize;
 //	int chunkSize;
 	int inFileSize;
+	int compressFileSize;
 	char srcEther[6];
 	char dstEther[6];
 	char protoEther[2];

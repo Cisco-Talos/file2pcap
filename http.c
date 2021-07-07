@@ -73,6 +73,7 @@ int httpPostRequest(struct handover *ho) {
 	char requestEnd[] =	"\"\r\nContent-Type: application/octet-stream\r\n\r\n";
 
 
+
 	//Calculating the content-length: everything after the http header
 	fullSize = 	strlen("-----------------------------8173728711543081858379436204\r\n") +
 			strlen("Content-Disposition: form-data; name=\"file\"; filename=\"") + 
@@ -80,7 +81,6 @@ int httpPostRequest(struct handover *ho) {
 			strlen("\"\r\nContent-Type: application/octet-stream\r\n\r\n") + 
 			(int)ho->inFileSize +
 			strlen("\r\n-----------------------------8173728711543081858379436204--\r\n");
-
 
         snprintf(tmp, sizeof(tmp)-1,"%s%d%s%s%s", requestStart, fullSize, requestCenter, ho->srcFile, requestEnd);
 
@@ -142,7 +142,12 @@ int httpGetRequestAcknowledge(struct handover *ho) {
 					"Content-Encoding: gzip\r\n"
 					"Connection: close\r\n"
 					"Content-Type: text/html\r\n\r\n";
-	char http_tail_gzip_chunked2[] = "\x1F\x8B\x08\x00\x00\x00\x00\x00\x00\x03";
+	char http_tail_gzip_chunked2[] = "\x1F\x8B"		//Magic: GZIP
+					 "\x08"			//Deflate
+					 "\x00"			//Flags
+					 "\x00\x00\x00\x00"	//Timestamp: 0 - none
+					 "\x00"			//Extra flags
+					 "\x03";		//OS: 3 - Unix
         char headerBuffer[500];
 
 
@@ -156,10 +161,11 @@ int httpGetRequestAcknowledge(struct handover *ho) {
 	{
 		char zipSize[33];
 		memset(zipSize, 0, sizeof(zipSize));
-		snprintf(zipSize, sizeof(zipSize)-1,"%d", ((unsigned int)ho->inFileSize)+12); //12 = 10 bytes gzip header + 8 bytes tail - 6 bytes we skip from temp file
-		snprintf(headerBuffer, sizeof(headerBuffer)-1,"%s%s", http_header_default, zipSize); 
+		snprintf(zipSize, sizeof(zipSize)-1,"%d", ((unsigned int)ho->compressFileSize)+16); //16 = 10 bytes gzip header + 8 bytes gzip tail - 2 bytes we skip from the start of the temp file
+		
+		snprintf(headerBuffer, sizeof(headerBuffer)-1,"%s%s", http_header_default, zipSize);  
 		memcpy(headerBuffer + sizeof(http_header_default) + strlen(zipSize)-1, &http_tail_gzip, sizeof(http_tail_gzip));
-		tcpSendData(ho, headerBuffer, sizeof(http_header_default)-1 + 4 + sizeof(http_tail_gzip)-1 - 1, FROM_SERVER); 
+		tcpSendData(ho, headerBuffer, sizeof(http_header_default)-1 + strlen(zipSize) + sizeof(http_tail_gzip)-1, FROM_SERVER); 
 	}
 	else if (ho->httpEncoder == ENC_HTTP_CHUNKED)
 	{
@@ -192,8 +198,11 @@ int httpTransferFile(struct handover *ho) {
 	sourceFile = ho->inFile;
 
 	if(ho->httpEncoder == ENC_HTTP_GZIP || ho->httpEncoder == ENC_HTTP_GZIP_CHUNKED)
+	{
 		sourceFile = ho->tmpFile;
+	}
 	
+
 	if(sourceFile != NULL)
 		rewind(sourceFile);
 
@@ -207,7 +216,6 @@ int httpTransferFile(struct handover *ho) {
 		packetLen = packetLen4;
 	else
 		packetLen = packetLen6;
-
 
 
         while(!(feof(sourceFile)))

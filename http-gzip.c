@@ -119,7 +119,7 @@ int compressGzip(struct handover *ho)
 		return -1;
 	}
 
-
+	ho->compressFileSize = fileStat.st_size-4;
 
 
 return Z_OK;

@@ -1,3 +1,4 @@
+Add HTTP 200 Ok after Http Post?
 if there are spaces in a filename, properly encode them as %20	DONE
 imap and pop3: attachment type is image/jpg			DONE	
 more encoding - uuencode					DONE
@@ -16,4 +17,7 @@ remove -i							DONE
 fix segv when infile is a directory				DONE
 check end of file and trailer for smtp/pop3/imap
 add uuencode to pop3/imap
+Fix filenames in attachments. Don't replace "." with 2e.
+Allow --block-size with email options
+Add Http Brotli compression
 
